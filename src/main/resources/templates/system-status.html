@@ -29,6 +29,23 @@
         </tbody>
     </table>
 </div>
+
+<div th:if="${installGuides != null}">
+    <h2>Install dependencies with Homebrew</h2>
+    <p>The following commands install the required CLI tools on macOS:</p>
+    <table>
+        <thead>
+        <tr><th>Dependency</th><th>Command</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="guide : ${installGuides}">
+            <td th:text="${guide.dependency}"></td>
+            <td><code th:text="${guide.command}"></code></td>
+            <td th:text="${guide.notes}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
 <p><a href="/">Back to home</a></p>
 </body>
 </html>
