@@ -18,6 +18,7 @@ public class TranscriptionProperties {
     private String downloaderCommand = "yt-dlp";
     private int requestTimeoutSeconds = 300;
     private Duration downloadCacheTtl = Duration.ofHours(12);
+    private long languageDetectionSampleSeconds = 20;
 
     public String getFfmpegCommand() {
         return ffmpegCommand;
@@ -93,6 +94,14 @@ public class TranscriptionProperties {
 
     public void setDownloadCacheTtl(Duration downloadCacheTtl) {
         this.downloadCacheTtl = downloadCacheTtl;
+    }
+
+    public long getLanguageDetectionSampleSeconds() {
+        return languageDetectionSampleSeconds;
+    }
+
+    public void setLanguageDetectionSampleSeconds(long languageDetectionSampleSeconds) {
+        this.languageDetectionSampleSeconds = languageDetectionSampleSeconds;
     }
 
     public Path tempDirPath() {

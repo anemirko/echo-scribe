@@ -4,7 +4,7 @@ EchoScribe is intentionally small and still avoids databases, but transcription 
 
 ## High-level design
 - **Controllers** only coordinate HTTP-level concerns and delegate to services.
-- **Services** host orchestration logic: acquisition, preparation, transcription, diagnostics, and the in-memory job queue.
+- **Services** host orchestration logic: acquisition, preparation, transcription, diagnostics, in-memory job queueing, and language detection.
 - **Infrastructure components** wrap external processes (downloader, ffprobe, ffmpeg, whisper-cli) and expose narrow interfaces.
 - **Configuration** is strongly typed using `@ConfigurationProperties`.
 - **Templates** are logic-free views that render forms and results.
@@ -14,9 +14,9 @@ EchoScribe is intentionally small and still avoids databases, but transcription 
 1. User uploads a media file.
 2. `MediaAcquisitionService` stores it under the configured temp directory and returns an `AcquiredMedia` that cleans up on close.
 3. `TranscriptionJobService` registers a job, schedules work on the `transcriptionTaskExecutor`, and immediately returns the job id.
-4. The worker invokes `MediaPreparationService` (ffprobe/ffmpeg) followed by `WhisperExecutor` to run `whisper-cli`.
-5. `TranscriptionService` assembles the `TranscriptionResult`, which is stored on the job record.
-6. Temp files are deleted automatically when the job finishes.
+4. Inside the worker, `LanguageDetectionService` optionally extracts a ~20 second preview clip via `ffmpeg` and runs `whisper-cli` to guess the spoken language when the request did not specify one.
+5. `MediaPreparationService` (ffprobe/ffmpeg) converts the full media to a normalized WAV file, and `WhisperExecutor` runs the final transcription using the detected or user-specified language.
+6. `TranscriptionService` assembles the `TranscriptionResult`, which is stored on the job record, and temp files are deleted automatically when the job finishes.
 
 ### URL inputs
 1. User provides a media URL.

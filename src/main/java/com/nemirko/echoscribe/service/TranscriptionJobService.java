@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.util.StringUtils;
 
 @Service
 public class TranscriptionJobService {
@@ -22,14 +23,17 @@ public class TranscriptionJobService {
 
     private final MediaAcquisitionService mediaAcquisitionService;
     private final TranscriptionService transcriptionService;
+    private final LanguageDetectionService languageDetectionService;
     private final TaskExecutor transcriptionTaskExecutor;
     private final Map<String, TranscriptionJob> jobs = new ConcurrentHashMap<>();
 
     public TranscriptionJobService(MediaAcquisitionService mediaAcquisitionService,
                                    TranscriptionService transcriptionService,
+                                   LanguageDetectionService languageDetectionService,
                                    TaskExecutor transcriptionTaskExecutor) {
         this.mediaAcquisitionService = mediaAcquisitionService;
         this.transcriptionService = transcriptionService;
+        this.languageDetectionService = languageDetectionService;
         this.transcriptionTaskExecutor = transcriptionTaskExecutor;
     }
 
@@ -39,7 +43,8 @@ public class TranscriptionJobService {
         TranscriptionJobResponse initial = TranscriptionJobResponse.fromJob(job);
         enqueue(job, () -> {
             try (media) {
-                return transcriptionService.transcribeMedia(media, language);
+                Optional<String> languageToUse = determineLanguage(media, language);
+                return transcriptionService.transcribeMedia(media, languageToUse);
             }
         });
         return initial;
@@ -51,7 +56,8 @@ public class TranscriptionJobService {
         TranscriptionJobResponse initial = TranscriptionJobResponse.fromJob(job);
         enqueue(job, () -> {
             try (AcquiredMedia media = mediaAcquisitionService.acquireFromUrl(url)) {
-                return transcriptionService.transcribeMedia(media, language);
+                Optional<String> languageToUse = determineLanguage(media, language);
+                return transcriptionService.transcribeMedia(media, languageToUse);
             }
         });
         return initial;
@@ -82,5 +88,17 @@ public class TranscriptionJobService {
             String message = e.getMessage() == null ? "Transcription failed" : e.getMessage();
             job.markFailed(message);
         }
+    }
+
+    private Optional<String> determineLanguage(AcquiredMedia media, Optional<String> requestedLanguage) {
+        Optional<String> normalized = requestedLanguage
+                .map(String::trim)
+                .filter(StringUtils::hasText);
+        if (normalized.isPresent()) {
+            return normalized;
+        }
+        return languageDetectionService.detectLanguage(media.getMediaPath())
+                .map(String::trim)
+                .filter(StringUtils::hasText);
     }
 }

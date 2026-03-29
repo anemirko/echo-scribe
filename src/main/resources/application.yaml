@@ -14,8 +14,9 @@ app:
     temp-dir: "build/tmp/echo-scribe"
     url-input-enabled: true
     downloader-command: yt-dlp
-    request-timeout-seconds: 300
+    request-timeout-seconds: 1200
     download-cache-ttl: 12h
+    language-detection-sample-seconds: 20
   logging:
     directory: logs
 management:

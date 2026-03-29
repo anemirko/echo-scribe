@@ -26,8 +26,10 @@ class TranscriptionJobServiceTest {
 
     private final MediaAcquisitionService mediaAcquisitionService = Mockito.mock(MediaAcquisitionService.class);
     private final TranscriptionService transcriptionService = Mockito.mock(TranscriptionService.class);
+    private final LanguageDetectionService languageDetectionService = Mockito.mock(LanguageDetectionService.class);
     private final TaskExecutor executor = Runnable::run;
-    private final TranscriptionJobService jobService = new TranscriptionJobService(mediaAcquisitionService, transcriptionService, executor);
+    private final TranscriptionJobService jobService = new TranscriptionJobService(
+            mediaAcquisitionService, transcriptionService, languageDetectionService, executor);
 
     @TempDir
     Path tempDir;
@@ -53,6 +55,7 @@ class TranscriptionJobServiceTest {
         TranscriptionJobResponse stored = jobService.findJob(job.getJobId()).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(TranscriptionJobStatus.SUCCEEDED);
         assertThat(stored.getResult().getTranscriptionText()).isEqualTo("done");
+        Mockito.verify(languageDetectionService, Mockito.never()).detectLanguage(any());
     }
 
     @Test
@@ -62,11 +65,38 @@ class TranscriptionJobServiceTest {
         doNothing().when(mediaAcquisitionService).validateUrl("https://example.com");
         when(mediaAcquisitionService.acquireFromUrl("https://example.com")).thenReturn(media);
         doThrow(new RuntimeException("boom")).when(transcriptionService).transcribeMedia(any(AcquiredMedia.class), any());
+        when(languageDetectionService.detectLanguage(any())).thenReturn(Optional.of("ru"));
 
         TranscriptionJobResponse job = jobService.submitUrl("https://example.com", Optional.empty());
         assertThat(jobService.findJob(job.getJobId())).map(TranscriptionJobResponse::getStatus)
                 .contains(TranscriptionJobStatus.FAILED);
         assertThat(jobService.findJob(job.getJobId())).map(TranscriptionJobResponse::getError)
                 .contains("boom");
+    }
+
+    @Test
+    void usesDetectedLanguageWhenNotProvided() throws IOException {
+        Path file = Files.createTempFile(tempDir, "upload", ".wav");
+        AcquiredMedia media = new AcquiredMedia(TranscriptionSourceType.FILE_UPLOAD, file, "upload.wav", null);
+        when(mediaAcquisitionService.acquireFromFile(any())).thenReturn(media);
+        when(languageDetectionService.detectLanguage(any())).thenReturn(Optional.of("fr"));
+        TranscriptionResult result = new TranscriptionResult(
+                TranscriptionSourceType.FILE_UPLOAD,
+                "upload.wav",
+                null,
+                "fr",
+                "bonjour",
+                Duration.ofSeconds(4));
+        when(transcriptionService.transcribeMedia(any(AcquiredMedia.class), any())).thenAnswer(invocation -> {
+            Optional<String> lang = invocation.getArgument(1);
+            assertThat(lang).contains("fr");
+            return result;
+        });
+
+        MockMultipartFile multipartFile = new MockMultipartFile("file", "upload.wav", "audio/wav", new byte[] {1});
+        TranscriptionJobResponse job = jobService.submitFile(multipartFile, Optional.empty());
+        TranscriptionJobResponse stored = jobService.findJob(job.getJobId()).orElseThrow();
+        assertThat(stored.getStatus()).isEqualTo(TranscriptionJobStatus.SUCCEEDED);
+        assertThat(stored.getResult().getDetectedLanguage()).isEqualTo("fr");
     }
 }

@@ -5,10 +5,11 @@ EchoScribe is a minimal Spring Boot web application that performs synchronous sp
 ## What it does
 - Accepts media inputs through file uploads or supported URLs
 - Probes media with `ffprobe`, prepares audio with `ffmpeg`, and transcribes with `whisper-cli`
- - Provides both a simple Thymeleaf UI and JSON APIs
+- Provides both a simple Thymeleaf UI and JSON APIs
 - Performs system diagnostics for external tool availability and Whisper model readiness
 - Logs operational events to console and rolling log files
- - Enqueues transcription requests as background jobs and exposes job status until completion
+- Enqueues transcription requests as background jobs and exposes job status until completion
+- Samples the first few seconds of media to auto-detect the spoken language before full transcription (configurable)
 
 ## What it does not do
 - No authentication, databases, job queues, or background workers
@@ -38,12 +39,13 @@ app:
     downloader-command: yt-dlp
     request-timeout-seconds: 300
     download-cache-ttl: 12h
+    language-detection-sample-seconds: 20
   logging:
     directory: logs
 ```
 
 Set `whisper-model-path` to a real, readable model file and adjust the CLI command names if they are not on your `PATH`. The `temp-dir` should be writable; temporary files are created and cleaned up there.
-Repeated URL downloads are cached under `temp-dir/cache/url-downloads` for `download-cache-ttl` (12 hours by default); set the TTL to `0s` to disable caching. Transcription requests run in the background; controllers return a job identifier immediately and the UI polls `/api/transcriptions/{jobId}` until the transcript is ready.
+Repeated URL downloads are cached under `temp-dir/cache/url-downloads` for `download-cache-ttl` (12 hours by default); set the TTL to `0s` to disable caching. `language-detection-sample-seconds` controls the preview length fed to `whisper-cli` for best-effort language detection before the full transcription; set it to `0` to disable detection. Transcription requests run in the background; controllers return a job identifier immediately and the UI polls `/api/transcriptions/{jobId}` until the transcript is ready.
 
 ## Running locally
 1. Install the required native tools (`ffmpeg`, `ffprobe`, `whisper-cli`, Whisper model). Homebrew works well on macOS.
