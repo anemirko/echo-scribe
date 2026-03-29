@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: EchoScribe
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 512MB
+app:
+  transcription:
+    ffmpeg-command: ffmpeg
+    ffprobe-command: ffprobe
+    whisper-command: whisper-cli
+    whisper-model-path: "/path/to/ggml-base.bin" # change to a readable whisper.cpp model path
+    temp-dir: "build/tmp/echo-scribe"
+    url-input-enabled: true
+    downloader-command: yt-dlp
+    request-timeout-seconds: 300
+  logging:
+    directory: logs
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

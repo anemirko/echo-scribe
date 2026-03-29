@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>System status</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+        th { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+<h1>System status</h1>
+<p>Dependency status summary.</p>
+<div th:if="${status != null}">
+    <p>File transcription ready: <strong th:text="${status.fileTranscriptionReady}"></strong></p>
+    <p>URL transcription ready: <strong th:text="${status.urlTranscriptionReady}"></strong></p>
+    <table>
+        <thead>
+        <tr><th>Check</th><th>Available</th><th>Details</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="check : ${status.checks}">
+            <td th:text="${check.name}"></td>
+            <td th:text="${check.available}"></td>
+            <td th:text="${check.message}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<p><a href="/">Back to home</a></p>
+</body>
+</html>

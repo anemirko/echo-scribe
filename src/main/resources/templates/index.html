@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>EchoScribe</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        .status { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+        form { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; }
+        label { display: block; margin-top: 0.5rem; }
+        textarea { width: 100%; min-height: 200px; }
+        .result { margin-top: 2rem; padding: 1rem; border: 1px solid #4caf50; border-radius: 4px; background: #f7fff7; }
+        .checks { margin-top: 0.5rem; }
+        .checks span { display: inline-block; margin-right: 1rem; }
+    </style>
+</head>
+<body>
+<h1>EchoScribe</h1>
+<p>Minimal local transcription utility. Upload a media file or provide a supported URL.</p>
+<div class="status" th:if="${status != null}">
+    <strong>System readiness</strong>
+    <div>File transcription: <span th:text="${status.fileTranscriptionReady} ? 'Ready' : 'Not ready'"></span></div>
+    <div>URL transcription: <span th:text="${status.urlTranscriptionReady} ? 'Ready' : 'Not ready'"></span></div>
+    <div class="checks">
+        <span th:each="check : ${status.checks}">
+            <span th:text="${check.name} + ':'"></span>
+            <span th:text="${check.available} ? 'ok' : check.message"></span>
+        </span>
+    </div>
+    <a href="/system/status">Detailed status</a>
+</div>
+
+<form th:action="@{/transcriptions/file}" method="post" enctype="multipart/form-data">
+    <h2>Transcribe file</h2>
+    <label>Media file
+        <input type="file" name="file" required>
+    </label>
+    <label>Preferred language (optional)
+        <input type="text" name="language" placeholder="auto">
+    </label>
+    <button type="submit">Transcribe file</button>
+</form>
+
+<form th:action="@{/transcriptions/url}" method="post">
+    <h2>Transcribe URL</h2>
+    <label>Media URL
+        <input type="url" name="url" placeholder="https://" required>
+    </label>
+    <label>Preferred language (optional)
+        <input type="text" name="language" placeholder="auto">
+    </label>
+    <button type="submit">Transcribe URL</button>
+</form>
+
+<div class="result" th:if="${result != null}">
+    <h2>Transcription result</h2>
+    <div>Source type: <span th:text="${result.sourceType}"></span></div>
+    <div>Source name: <span th:text="${result.sourceName}"></span></div>
+    <div th:if="${result.sourceUrl != null}">Source URL: <span th:text="${result.sourceUrl}"></span></div>
+    <div>Detected language: <span th:text="${result.detectedLanguage}"></span></div>
+    <div th:if="${result.duration != null}">Duration: <span th:text="${result.duration}"></span></div>
+    <label>Transcript</label>
+    <textarea readonly th:text="${result.transcriptionText}"></textarea>
+</div>
+</body>
+</html>
