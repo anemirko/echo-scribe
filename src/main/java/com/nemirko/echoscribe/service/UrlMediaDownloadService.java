@@ -43,13 +43,7 @@ public class UrlMediaDownloadService {
     }
 
     public DownloadedMedia download(String rawUrl) {
-        if (!properties.isUrlInputEnabled()) {
-            throw new InvalidRequestException("URL transcription is disabled by configuration");
-        }
-        URI uri = toUri(rawUrl);
-        if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new InvalidRequestException("Only HTTP/HTTPS URLs are supported");
-        }
+        URI uri = validateUrl(rawUrl);
 
         try {
             Duration cacheTtl = properties.getDownloadCacheTtl();
@@ -90,6 +84,17 @@ public class UrlMediaDownloadService {
         } catch (IOException e) {
             throw new CommandExecutionException("Unable to store downloaded media", e);
         }
+    }
+
+    public URI validateUrl(String rawUrl) {
+        if (!properties.isUrlInputEnabled()) {
+            throw new InvalidRequestException("URL transcription is disabled by configuration");
+        }
+        URI uri = toUri(rawUrl);
+        if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new InvalidRequestException("Only HTTP/HTTPS URLs are supported");
+        }
+        return uri;
     }
 
     private URI toUri(String value) {

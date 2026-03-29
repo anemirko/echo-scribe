@@ -59,4 +59,8 @@ public class MediaAcquisitionService {
         media.registerCleanup(downloaded.workingDirectory());
         return media;
     }
+
+    public void validateUrl(String url) {
+        urlMediaDownloadService.validateUrl(url);
+    }
 }

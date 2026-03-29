@@ -1,9 +1,9 @@
 package com.nemirko.echoscribe.controller;
 
 import com.nemirko.echoscribe.dto.SystemStatusResponse;
-import com.nemirko.echoscribe.dto.TranscriptionResponse;
 import com.nemirko.echoscribe.service.SystemStatusService;
-import com.nemirko.echoscribe.service.TranscriptionService;
+import com.nemirko.echoscribe.dto.TranscriptionJobResponse;
+import com.nemirko.echoscribe.service.TranscriptionJobService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,12 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class HomeController {
 
     private final SystemStatusService systemStatusService;
-    private final TranscriptionService transcriptionService;
+    private final TranscriptionJobService transcriptionJobService;
 
     public HomeController(SystemStatusService systemStatusService,
-                          TranscriptionService transcriptionService) {
+                          TranscriptionJobService transcriptionJobService) {
         this.systemStatusService = systemStatusService;
-        this.transcriptionService = transcriptionService;
+        this.transcriptionJobService = transcriptionJobService;
     }
 
     @GetMapping("/")
@@ -37,9 +37,8 @@ public class HomeController {
     public String transcribeFile(@RequestParam("file") MultipartFile file,
                                  @RequestParam(value = "language", required = false) String language,
                                  Model model) {
-        TranscriptionResponse response = TranscriptionResponse.fromResult(
-                transcriptionService.transcribeFile(file, java.util.Optional.ofNullable(language)));
-        populateModel(model, response);
+        TranscriptionJobResponse job = transcriptionJobService.submitFile(file, java.util.Optional.ofNullable(language));
+        populateModel(model, job);
         return "index";
     }
 
@@ -47,14 +46,14 @@ public class HomeController {
     public String transcribeUrl(@RequestParam("url") @NotBlank String url,
                                 @RequestParam(value = "language", required = false) String language,
                                 Model model) {
-        TranscriptionResponse response = TranscriptionResponse.fromResult(
-                transcriptionService.transcribeUrl(url, java.util.Optional.ofNullable(language)));
-        populateModel(model, response);
+        TranscriptionJobResponse job = transcriptionJobService.submitUrl(url, java.util.Optional.ofNullable(language));
+        populateModel(model, job);
         return "index";
     }
 
-    private void populateModel(Model model, TranscriptionResponse response) {
+    private void populateModel(Model model, TranscriptionJobResponse job) {
         model.addAttribute("status", systemStatusService.currentStatus());
-        model.addAttribute("result", response);
+        model.addAttribute("job", job);
+        model.addAttribute("result", job.getResult());
     }
 }

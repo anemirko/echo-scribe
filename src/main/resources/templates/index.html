@@ -12,6 +12,8 @@
         .result { margin-top: 2rem; padding: 1rem; border: 1px solid #4caf50; border-radius: 4px; background: #f7fff7; }
         .checks { margin-top: 0.5rem; }
         .checks span { display: inline-block; margin-right: 1rem; }
+        .hidden { display: none; }
+        .job-error { color: #c62828; margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -52,15 +54,90 @@
     <button type="submit">Transcribe URL</button>
 </form>
 
-<div class="result" th:if="${result != null}">
-    <h2>Transcription result</h2>
-    <div>Source type: <span th:text="${result.sourceType}"></span></div>
-    <div>Source name: <span th:text="${result.sourceName}"></span></div>
-    <div th:if="${result.sourceUrl != null}">Source URL: <span th:text="${result.sourceUrl}"></span></div>
-    <div>Detected language: <span th:text="${result.detectedLanguage}"></span></div>
-    <div th:if="${result.duration != null}">Duration: <span th:text="${result.duration}"></span></div>
-    <label>Transcript</label>
-    <textarea readonly th:text="${result.transcriptionText}"></textarea>
+<div class="result" th:if="${job != null}" id="job-panel" th:attr="data-job-id=${job.jobId}">
+    <h2>Transcription job</h2>
+    <div>Job ID: <span id="job-id" th:text="${job.jobId}"></span></div>
+    <div>Status: <span id="job-status" th:text="${job.status}"></span></div>
+    <div id="job-error" class="job-error" th:classappend="${job.error == null} ? ' hidden'">
+        <strong>Error:</strong> <span id="job-error-text" th:text="${job.error}"></span>
+    </div>
+    <div id="job-result" th:classappend="${job.result == null} ? ' hidden'">
+        <div>Source type: <span id="job-source-type" th:text="${job.result != null ? job.result.sourceType : ''}"></span></div>
+        <div>Source name: <span id="job-source-name" th:text="${job.result != null ? job.result.sourceName : ''}"></span></div>
+        <div id="job-source-url" th:classappend="${job.result == null || job.result.sourceUrl == null} ? ' hidden'">
+            Source URL: <span id="job-source-url-text" th:text="${job.result != null ? job.result.sourceUrl : ''}"></span>
+        </div>
+        <div>Detected language: <span id="job-language" th:text="${job.result != null ? job.result.detectedLanguage : ''}"></span></div>
+        <div id="job-duration" th:classappend="${job.result == null || job.result.duration == null} ? ' hidden'">
+            Duration: <span id="job-duration-text" th:text="${job.result != null ? job.result.duration : ''}"></span>
+        </div>
+        <label>Transcript</label>
+        <textarea id="job-transcript" readonly th:text="${job.result != null ? job.result.transcriptionText : ''}"></textarea>
+    </div>
+    <p>Keep this page open; it will refresh the job status automatically.</p>
 </div>
+
+<script th:if="${job != null}" th:inline="javascript">
+    (function() {
+        const jobId = [[${job.jobId}]];
+        const statusEl = document.getElementById('job-status');
+        const errorEl = document.getElementById('job-error');
+        const errorText = document.getElementById('job-error-text');
+        const resultSection = document.getElementById('job-result');
+        const sourceType = document.getElementById('job-source-type');
+        const sourceName = document.getElementById('job-source-name');
+        const sourceUrlContainer = document.getElementById('job-source-url');
+        const sourceUrlText = document.getElementById('job-source-url-text');
+        const languageEl = document.getElementById('job-language');
+        const durationContainer = document.getElementById('job-duration');
+        const durationText = document.getElementById('job-duration-text');
+        const transcript = document.getElementById('job-transcript');
+
+        async function poll() {
+            try {
+                const response = await fetch(`/api/transcriptions/${jobId}`);
+                if (!response.ok) {
+                    throw new Error('Unable to fetch status');
+                }
+                const body = await response.json();
+                statusEl.textContent = body.status;
+                if (body.error) {
+                    errorEl.classList.remove('hidden');
+                    errorText.textContent = body.error;
+                } else {
+                    errorEl.classList.add('hidden');
+                }
+                if (body.result) {
+                    resultSection.classList.remove('hidden');
+                    sourceType.textContent = body.result.sourceType;
+                    sourceName.textContent = body.result.sourceName;
+                    if (body.result.sourceUrl) {
+                        sourceUrlContainer.classList.remove('hidden');
+                        sourceUrlText.textContent = body.result.sourceUrl;
+                    } else {
+                        sourceUrlContainer.classList.add('hidden');
+                    }
+                    languageEl.textContent = body.result.detectedLanguage;
+                    if (body.result.duration) {
+                        durationContainer.classList.remove('hidden');
+                        durationText.textContent = body.result.duration;
+                    } else {
+                        durationContainer.classList.add('hidden');
+                    }
+                    transcript.value = body.result.transcriptionText || '';
+                }
+                if (body.status === 'SUCCEEDED' || body.status === 'FAILED') {
+                    return;
+                }
+                setTimeout(poll, 3000);
+            } catch (err) {
+                console.error(err);
+                setTimeout(poll, 5000);
+            }
+        }
+
+        setTimeout(poll, 2000);
+    })();
+</script>
 </body>
 </html>

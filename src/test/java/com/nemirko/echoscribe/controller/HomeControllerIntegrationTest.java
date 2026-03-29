@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.nemirko.echoscribe.dto.SystemStatusResponse;
 import com.nemirko.echoscribe.service.SystemStatusService;
-import com.nemirko.echoscribe.service.TranscriptionService;
+import com.nemirko.echoscribe.service.TranscriptionJobService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class HomeControllerIntegrationTest {
     SystemStatusService systemStatusService;
 
     @MockBean
-    TranscriptionService transcriptionService;
+    TranscriptionJobService transcriptionJobService;
 
     @BeforeEach
     void setup() {

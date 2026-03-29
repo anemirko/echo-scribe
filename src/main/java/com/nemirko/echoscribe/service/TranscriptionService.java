@@ -30,17 +30,17 @@ public class TranscriptionService {
 
     public TranscriptionResult transcribeFile(MultipartFile file, Optional<String> language) {
         try (AcquiredMedia media = mediaAcquisitionService.acquireFromFile(file)) {
-            return process(media, language);
+            return transcribeMedia(media, language);
         }
     }
 
     public TranscriptionResult transcribeUrl(String url, Optional<String> language) {
         try (AcquiredMedia media = mediaAcquisitionService.acquireFromUrl(url)) {
-            return process(media, language);
+            return transcribeMedia(media, language);
         }
     }
 
-    private TranscriptionResult process(AcquiredMedia media, Optional<String> language) {
+    public TranscriptionResult transcribeMedia(AcquiredMedia media, Optional<String> language) {
         log.info("Starting transcription for {}", media.getDisplayName());
         try (MediaPreparationService.PreparationResult preparation = mediaPreparationService.prepare(media.getMediaPath())) {
             WhisperResult whisperResult = whisperExecutor.transcribe(preparation.audio().audioFile(), language);
