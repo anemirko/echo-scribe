@@ -36,11 +36,13 @@ app:
     url-input-enabled: true
     downloader-command: yt-dlp
     request-timeout-seconds: 300
+    download-cache-ttl: 12h
   logging:
     directory: logs
 ```
 
 Set `whisper-model-path` to a real, readable model file and adjust the CLI command names if they are not on your `PATH`. The `temp-dir` should be writable; temporary files are created and cleaned up there.
+Repeated URL downloads are cached under `temp-dir/cache/url-downloads` for `download-cache-ttl` (12 hours by default); set the TTL to `0s` to disable caching.
 
 ## Running locally
 1. Install the required native tools (`ffmpeg`, `ffprobe`, `whisper-cli`, Whisper model). Homebrew works well on macOS.

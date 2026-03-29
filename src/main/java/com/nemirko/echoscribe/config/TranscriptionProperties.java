@@ -17,6 +17,7 @@ public class TranscriptionProperties {
     private boolean urlInputEnabled = true;
     private String downloaderCommand = "yt-dlp";
     private int requestTimeoutSeconds = 300;
+    private Duration downloadCacheTtl = Duration.ofHours(12);
 
     public String getFfmpegCommand() {
         return ffmpegCommand;
@@ -84,6 +85,14 @@ public class TranscriptionProperties {
 
     public Duration requestTimeout() {
         return Duration.ofSeconds(requestTimeoutSeconds);
+    }
+
+    public Duration getDownloadCacheTtl() {
+        return downloadCacheTtl;
+    }
+
+    public void setDownloadCacheTtl(Duration downloadCacheTtl) {
+        this.downloadCacheTtl = downloadCacheTtl;
     }
 
     public Path tempDirPath() {

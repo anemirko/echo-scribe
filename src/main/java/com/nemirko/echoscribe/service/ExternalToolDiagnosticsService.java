@@ -5,6 +5,7 @@ import com.nemirko.echoscribe.dto.SystemCheckResult;
 import com.nemirko.echoscribe.infra.process.CommandExecutionException;
 import com.nemirko.echoscribe.infra.process.CommandRequest;
 import com.nemirko.echoscribe.infra.process.ExternalCommandExecutor;
+import com.nemirko.echoscribe.util.PathUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class ExternalToolDiagnosticsService {
         if (modelPath == null || modelPath.isBlank()) {
             return new SystemCheckResult("whisper-model", false, "Model path not configured");
         }
-        Path path = Path.of(modelPath);
+        Path path = PathUtils.expandUserHome(modelPath);
         boolean available = Files.isRegularFile(path) && Files.isReadable(path);
         return new SystemCheckResult(
                 "whisper-model",

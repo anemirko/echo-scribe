@@ -6,6 +6,7 @@ import com.nemirko.echoscribe.infra.process.CommandExecutionException;
 import com.nemirko.echoscribe.infra.process.CommandRequest;
 import com.nemirko.echoscribe.infra.process.CommandResult;
 import com.nemirko.echoscribe.infra.process.ExternalCommandExecutor;
+import com.nemirko.echoscribe.util.PathUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,6 +40,7 @@ public class DefaultWhisperExecutor implements WhisperExecutor {
         }
 
         try {
+            Path resolvedModelPath = PathUtils.expandUserHome(modelPath);
             Path tempDir = properties.tempDirPath();
             Files.createDirectories(tempDir);
             Path outputTemp = Files.createTempFile(tempDir, "whisper-", "");
@@ -47,7 +49,7 @@ public class DefaultWhisperExecutor implements WhisperExecutor {
             List<String> command = new ArrayList<>();
             command.add(properties.getWhisperCommand());
             command.add("-m");
-            command.add(modelPath);
+            command.add(resolvedModelPath.toString());
             command.add("-f");
             command.add(audioFile.toAbsolutePath().toString());
             command.add("-otxt");

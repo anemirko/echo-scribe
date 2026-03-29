@@ -54,6 +54,31 @@ class DefaultWhisperExecutorTest {
         assertThat(command).contains("-m", modelFile.toString());
     }
 
+    @Test
+    void expandsUserHomeInModelPath() throws IOException {
+        String originalHome = System.getProperty("user.home");
+        System.setProperty("user.home", tempDir.toAbsolutePath().toString());
+        try {
+            TranscriptionProperties properties = new TranscriptionProperties();
+            properties.setTempDir(tempDir.toString());
+            properties.setWhisperCommand("whisper-cli");
+            String relative = tempDir.relativize(modelFile).toString().replace('\\', '/');
+            properties.setWhisperModelPath("~/" + relative);
+            RecordingExecutor executor = new RecordingExecutor();
+            DefaultWhisperExecutor service = new DefaultWhisperExecutor(properties, executor);
+
+            WhisperResult result = service.transcribe(Files.createTempFile(tempDir, "audio", ".wav"), Optional.empty());
+            assertThat(result.transcript()).isEqualTo("done");
+            assertThat(executor.lastRequest.command()).contains("-m", modelFile.toString());
+        } finally {
+            if (originalHome != null) {
+                System.setProperty("user.home", originalHome);
+            } else {
+                System.clearProperty("user.home");
+            }
+        }
+    }
+
     private static class RecordingExecutor implements ExternalCommandExecutor {
         private CommandRequest lastRequest;
 
