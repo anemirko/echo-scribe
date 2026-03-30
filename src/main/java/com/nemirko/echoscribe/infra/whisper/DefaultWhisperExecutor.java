@@ -71,6 +71,7 @@ public class DefaultWhisperExecutor implements WhisperExecutor {
             String transcript = Files.readString(transcriptFile, StandardCharsets.UTF_8);
             Files.deleteIfExists(transcriptFile);
             Files.deleteIfExists(outputTemp);
+            log.info("Completed whisper.cpp transcription: lang={}, bytes={}", lang, transcript.length());
             return new WhisperResult(lang, transcript.trim());
         } catch (IOException e) {
             throw new CommandExecutionException("Failed to process whisper output", e);
